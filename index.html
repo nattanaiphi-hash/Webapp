@@ -1,506 +1,493 @@
-<!doctype html>
-<html lang="th">
+<!DOCTYPE html>
+<html lang="th" data-theme="indigo">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>ระบบจัดการสำนวนสอบสวนอัจฉริยะ</title>
 
-  <!-- Tailwind CSS via CDN -->
+  <!-- Tailwind CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            brand: {
-              50:  '#f3f7fb',
-              100: '#e7eef7',
-              200: '#c9daef',
-              300: '#9bb9e0',
-              400: '#6f96cc',
-              500: '#416fb6',
-              600: '#27599e',   /* primary */
-              700: '#1f487f',
-              800: '#1a3b68',
-              900: '#152f54',
-            }
-          },
-          boxShadow: {
-            card: '0 8px 24px rgba(16,24,40,.08), 0 4px 8px rgba(16,24,40,.06)'
-          }
-        }
-      }
-    }
-  </script>
+  <!-- Kanit font -->
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <style>
-    .glass { backdrop-filter: saturate(160%) blur(6px); }
-    .btn-primary { @apply inline-flex items-center justify-center rounded-lg px-4 py-2.5 font-medium bg-brand-600 text-white hover:bg-brand-700 transition; }
-    .btn-ghost  { @apply inline-flex items-center justify-center rounded-lg px-4 py-2.5 font-medium text-brand-700 hover:bg-brand-50 transition; }
-    .tag        { @apply inline-flex items-center rounded-md bg-brand-50 text-brand-700 px-2 py-0.5 text-xs font-medium; }
-    .input      { @apply block w-full rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-400 focus:border-brand-400; }
-    .card       { @apply bg-white rounded-2xl shadow-card border border-slate-100; }
-    .kbd        { @apply inline-flex items-center rounded border px-1.5 text-[11px] text-slate-600 bg-slate-50 border-slate-300; }
-    .skeleton   { position:relative; overflow:hidden; }
-    .skeleton::after{
-      content:""; position:absolute; inset:0;
-      background: linear-gradient(90deg, rgba(0,0,0,0) 0%, rgba(255,255,255,.5) 50%, rgba(0,0,0,0) 100%);
-      transform: translateX(-100%); animation: shimmer 1.3s infinite;
-    }
-    @keyframes shimmer{ 100%{ transform: translateX(100%);} }
+    :root { --brand:#0f2f6b; --brand-2:#243b5a; }
+    html,body { height:100%; background:linear-gradient(180deg,#0b1220,#0f172a 35%,#0b1220); color:#e5e7eb; }
+    body { font-family:"Kanit",system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial,"Noto Sans","Apple Color Emoji","Segoe UI Emoji"; }
+    .glass { backdrop-filter: blur(14px); background: rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.08); }
+    .glass-strong { backdrop-filter: blur(20px); background: rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.12); }
+    .btn-brand { background:linear-gradient(135deg,#1e3a8a,#0ea5e9); }
+    .btn-brand:hover { filter:brightness(1.08); }
+    .tag { border:1px dashed rgba(255,255,255,.18); padding:.125rem .375rem; border-radius:.375rem; font-size:.75rem; }
+    .shadow-elev { box-shadow: 0 10px 30px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.04); }
+    .divider { height:1px; background:linear-gradient(90deg,transparent,rgba(255,255,255,.16),transparent); }
+    .mono { font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace; }
+    .linkish { color:#93c5fd; text-decoration: underline dotted; text-underline-offset: 3px; }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-900">
+<body class="min-h-screen">
 
-<!-- ========================= LOGO (Data URI) ========================= -->
-<!-- โลโก้ที่ให้มาถูกย่อขนาดและฝังแบบ Base64 เพื่อลดขนาดหน้า -->
-<img id="app-logo" class="hidden" alt="logo"
-     src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAoHBwgHBgoICAgLCgoLDhgQD... (ย่อ) ..."
-/>
-
-<!-- ========================= APP CONTAINER ========================= -->
-<div id="app" class="min-h-screen">
-
-  <!-- ----------------------- LOGIN VIEW ----------------------- -->
-  <section id="view-login" class="min-h-screen flex items-center justify-center p-6">
-    <div class="w-full max-w-md card p-8">
-      <div class="flex flex-col items-center gap-4 mb-6">
-        <img class="w-20 h-20" alt="ตราสัญลักษณ์" src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAoHBwgHBgoICAgLCgoLDhgQD... (ย่อ) ..." />
-        <h1 class="text-xl font-semibold text-brand-700">ระบบจัดการสำนวนสอบสวนอัจฉริยะ</h1>
-        <span class="tag">Nikhompattana Police Station</span>
-      </div>
-      <form id="login-form" class="space-y-4">
-        <div>
-          <label class="text-sm font-medium">ชื่อผู้ใช้</label>
-          <input id="login-username" class="input mt-1" placeholder="เช่น pol123" autocomplete="username" />
+  <!-- Top Nav -->
+  <header class="glass-strong shadow-elev sticky top-0 z-50">
+    <div class="mx-auto max-w-7xl px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-lg bg-blue-500/20 grid place-content-center border border-white/15">
+          <span class="mono text-sm">ID</span>
         </div>
         <div>
-          <label class="text-sm font-medium">รหัสผ่าน</label>
-          <input id="login-password" type="password" class="input mt-1" placeholder="••••••••" autocomplete="current-password" />
-        </div>
-        <button class="btn-primary w-full" type="submit">เข้าสู่ระบบ</button>
-        <p class="text-xs text-slate-500 text-center">การยืนยันสิทธิ์ตรวจสอบกับ Google Sheet ที่หน่วยงานกำหนด</p>
-      </form>
-    </div>
-  </section>
-
-  <!-- ----------------------- MAIN VIEW ----------------------- -->
-  <section id="view-main" class="hidden">
-    <!-- Top Bar -->
-    <header class="sticky top-0 z-20 bg-white border-b border-slate-200">
-      <div class="max-w-7xl mx-auto px-4 py-3 flex items-center gap-4">
-        <img class="w-11 h-11" alt="ตราสัญลักษณ์" src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAoHBwgHBgoICAgLCgoLDhgQD... (ย่อ) ..." />
-        <div class="min-w-0">
-          <div class="text-sm text-slate-500">ระบบจัดการสำนวนสอบสวนอัจฉริยะ</div>
-          <div class="font-semibold">NIKHOMPATTANA • <span class="text-brand-600">POLICE STATION</span></div>
-        </div>
-        <div class="ml-auto flex items-center gap-2">
-          <button id="btn-open-workflow-b" class="btn-primary">
-            ⚙️ กำหนดแม่แบบ
-          </button>
-          <button id="btn-logout" class="btn-ghost" title="ออกจากระบบ">
-            ออกจากระบบ
-          </button>
+          <h1 class="text-lg font-semibold">ระบบจัดการสำนวนสอบสวนอัจฉริยะ</h1>
+          <p class="text-xs text-white/60">Smart Investigation Document Management</p>
         </div>
       </div>
-    </header>
-
-    <!-- Body -->
-    <div class="max-w-7xl mx-auto px-4 py-6 flex gap-6">
-      <!-- Sidebar -->
-      <aside class="hidden md:block w-64 shrink-0">
-        <nav class="card p-3">
-          <a data-route="dashboard" class="nav-link block px-3 py-2 rounded-lg hover:bg-slate-50 font-medium text-slate-700 cursor-pointer">แดชบอร์ด</a>
-          <a data-route="workflowA" class="nav-link block px-3 py-2 rounded-lg hover:bg-slate-50 font-medium text-slate-700 cursor-pointer">ใช้งานแม่แบบ</a>
-          <a data-route="workflowB" class="nav-link block px-3 py-2 rounded-lg hover:bg-slate-50 font-medium text-brand-700 cursor-pointer">กำหนดแม่แบบ</a>
-        </nav>
-      </aside>
-
-      <!-- Content Area -->
-      <main id="content" class="flex-1 space-y-6">
-        <!-- Dashboard -->
-        <section id="page-dashboard" class="card p-6">
-          <div class="flex items-start justify-between gap-4">
-            <div>
-              <h2 class="text-lg font-semibold">ยินดีต้อนรับ</h2>
-              <p class="text-slate-600 mt-1">เลือกเมนูด้านซ้าย หรือกดปุ่ม <span class="tag">กำหนดแม่แบบ</span> ด้านบนเพื่อเริ่มต้น</p>
-            </div>
-            <div class="hidden sm:block">
-              <kbd class="kbd">A</kbd>
-              <span class="text-xs text-slate-500 ml-1">ไปหน้าใช้งานแม่แบบ</span>
-            </div>
-          </div>
-        </section>
-
-        <!-- ============ Workflow A: ใช้งานแม่แบบ ============ -->
-        <section id="page-workflowA" class="hidden card p-6">
-          <div class="flex items-center justify-between">
-            <h2 class="text-lg font-semibold">ใช้งานแม่แบบ (Workflow A)</h2>
-            <span class="tag">ขั้นตอน: listFiles → startMergeAndGetPlaceholders → finalizeDocument</span>
-          </div>
-
-          <!-- Folder selector -->
-          <div class="mt-4 grid md:grid-cols-2 gap-4">
-            <div>
-              <label class="text-sm font-medium">เลือกโฟลเดอร์ (ชื่อหรือ ID)</label>
-              <input id="a-folder" class="input mt-1" placeholder="เช่น แบบฟอร์มสำนวน หรือ 13JghJv5DuptcNP1Ka65UL47ZqShwLqnY" />
-              <p class="text-xs text-slate-500 mt-1">ระบบจะดึงเฉพาะไฟล์ .docx (GAS จัดกรอง)</p>
-            </div>
-            <div class="flex items-end">
-              <button id="a-list" class="btn-ghost w-full md:w-auto">ดึงรายการไฟล์</button>
-            </div>
-          </div>
-
-          <!-- Files table -->
-          <div id="a-files" class="mt-4"></div>
-
-          <!-- Actions after file selection -->
-          <div class="mt-4 flex items-center gap-2">
-            <button id="a-merge" class="btn-primary" disabled>รวมเอกสารและดึงตัวแปร</button>
-            <span class="text-xs text-slate-500">เลือกไฟล์อย่างน้อย 1 รายการ</span>
-          </div>
-
-          <!-- Dynamic form for placeholders -->
-          <div id="a-form-wrap" class="mt-6 hidden">
-            <h3 class="font-medium mb-2">กรอกค่าตัวแปร</h3>
-            <form id="a-form" class="grid md:grid-cols-2 gap-4"></form>
-            <div class="mt-4 flex items-center gap-2">
-              <button id="a-finalize" class="btn-primary">สร้างเอกสาร</button>
-              <button id="a-reset" class="btn-ghost" type="button">เริ่มใหม่</button>
-            </div>
-            <div id="a-result" class="mt-4 hidden"></div>
-          </div>
-        </section>
-
-        <!-- ============ Workflow B: กำหนดแม่แบบ ============ -->
-        <section id="page-workflowB" class="hidden card p-6">
-          <div class="flex items-center justify-between">
-            <h2 class="text-lg font-semibold">กำหนดแม่แบบ (Workflow B)</h2>
-            <span class="tag">ขั้นตอน: listFiles (โฟลเดอร์ “แบบฟอร์มสำนวน”) → startMergeAndGetPlaceholders → finalizeDocument</span>
-          </div>
-
-          <!-- Pre-filled folder -->
-          <div class="mt-4 grid md:grid-cols-2 gap-4">
-            <div>
-              <label class="text-sm font-medium">โฟลเดอร์แม่แบบ (ชื่อ “แบบฟอร์มสำนวน” หรือ ID)</label>
-              <input id="b-folder" class="input mt-1" />
-            </div>
-            <div class="flex items-end">
-              <button id="b-list" class="btn-ghost w-full md:w-auto">ดึงรายการไฟล์</button>
-            </div>
-          </div>
-
-          <div id="b-files" class="mt-4"></div>
-
-          <div class="mt-4 flex items-center gap-2">
-            <button id="b-merge" class="btn-primary" disabled>รวมเอกสารและดึงตัวแปร</button>
-            <button id="b-save-template" class="btn-ghost" disabled title="คัดลอก Merged Doc (ยังไม่แทนค่า) ไปยังโฟลเดอร์เป้าหมาย">บันทึกเป็นแม่แบบ</button>
-          </div>
-
-          <div id="b-form-wrap" class="mt-6 hidden">
-            <div class="grid md:grid-cols-3 gap-4">
-              <div class="md:col-span-2">
-                <h3 class="font-medium mb-2">ค่าตัวแปรสำหรับแม่แบบนี้</h3>
-                <form id="b-form" class="grid md:grid-cols-2 gap-4"></form>
-              </div>
-              <div class="md:col-span-1 card p-4">
-                <h4 class="font-medium">จัดเก็บแม่แบบ (ตัวเลือก)</h4>
-                <label class="text-sm mt-2 block">ชื่อแม่แบบ</label>
-                <input id="b-template-name" class="input mt-1" placeholder="เช่น แม่แบบบันทึกถ้อยคำ" />
-                <label class="text-sm mt-3 block">โฟลเดอร์ปลายทาง (ID)</label>
-                <input id="b-target-folder" class="input mt-1" placeholder="เช่น BdsRx4wqfMyCL0JEQK-1SbH1GocvtPZg" />
-                <button id="b-save-template-2" class="btn-ghost w-full mt-3" type="button">คัดลอกเป็นแม่แบบ</button>
-              </div>
-            </div>
-
-            <div class="mt-4 flex items-center gap-2">
-              <button id="b-finalize" class="btn-primary">สร้างเอกสารตัวอย่าง</button>
-              <button id="b-reset" class="btn-ghost" type="button">เริ่มใหม่</button>
-            </div>
-            <div id="b-result" class="mt-4 hidden"></div>
-          </div>
-        </section>
-      </main>
+      <nav class="hidden md:flex items-center gap-6 text-sm">
+        <button id="nav-workflow-a" class="hover:text-white/90">ใช้งานแม่แบบ</button>
+        <button id="nav-workflow-b" class="hover:text-white/90">กำหนดแม่แบบ</button>
+        <button id="nav-about" class="hover:text-white/90">คู่มือ</button>
+      </nav>
+      <div class="flex items-center gap-2">
+        <span id="login-badge" class="tag text-white/80">ยังไม่ล็อกอิน</span>
+        <button id="logoutBtn" class="px-3 py-1.5 text-sm rounded-md border border-white/15 hover:bg-white/10">ออกจากระบบ</button>
+      </div>
     </div>
-  </section>
-</div>
+  </header>
 
-<!-- ========================= TOAST / LOADER ========================= -->
-<div id="toast" class="fixed bottom-4 right-4 hidden">
-  <div class="card px-4 py-3 text-sm" id="toast-text">บันทึกแล้ว</div>
-</div>
-<div id="blocker" class="hidden fixed inset-0 bg-black/20 z-30 flex items-center justify-center">
-  <div class="card px-4 py-3 text-sm flex items-center gap-2 glass">
-    <svg class="animate-spin h-5 w-5 text-brand-600" viewBox="0 0 24 24">
-      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/>
-      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
-    </svg>
-    กำลังประมวลผล...
+  <!-- Main Container -->
+  <main class="mx-auto max-w-7xl px-4 py-8 grid md:grid-cols-12 gap-6">
+
+    <!-- Sidebar -->
+    <aside class="md:col-span-3 glass shadow-elev rounded-xl p-4 h-fit">
+      <h2 class="text-base font-semibold mb-2">เมนู</h2>
+      <div class="divider mb-3"></div>
+      <ul class="space-y-1 text-sm">
+        <li><button class="w-full text-left px-3 py-2 rounded hover:bg-white/10" data-route="dashboard">ภาพรวม</button></li>
+        <li><button class="w-full text-left px-3 py-2 rounded hover:bg-white/10" data-route="workflow-a">ใช้งานแม่แบบ</button></li>
+        <li><button class="w-full text-left px-3 py-2 rounded hover:bg-white/10" data-route="workflow-b">กำหนดแม่แบบ</button></li>
+        <li><button class="w-full text-left px-3 py-2 rounded hover:bg-white/10" data-route="about">คู่มือ & สัญญาเชื่อมต่อ</button></li>
+      </ul>
+
+      <div class="divider my-4"></div>
+
+      <div class="space-y-2">
+        <p class="text-xs text-white/70">โฟลเดอร์ที่ใช้</p>
+        <div class="text-[11px] mono bg-black/30 rounded p-2 border border-white/10">
+          Root: <span id="rootFolderId">BdsRx4wqfMyCL0JEQK-1SbH1GocvtPZg</span><br>
+          Temp: <span id="tempFolderId">13JghJv5DuptcNP1Ka65UL47ZqShwLqnY</span>
+        </div>
+        <p class="text-xs text-white/70">GAS URL</p>
+        <div class="text-[11px] mono bg-black/30 rounded p-2 border border-white/10">
+          <span id="gasUrl">https://script.google.com/macros/s/AKfycbzXJXH3z1Iupz6jeJb5vD4oEzVgXyQbbYnhTW2vhr9s-ILRQfWgWeYFj_ULg5AxIGc4/exec</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Content Area -->
+    <section id="content" class="md:col-span-9 space-y-6">
+      <!-- Login Card -->
+      <div id="login-card" class="glass shadow-elev rounded-xl p-6">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <h2 class="text-xl font-semibold mb-1">เข้าสู่ระบบ</h2>
+            <p class="text-sm text-white/70">ยืนยันตัวตนด้วยบัญชีที่ลงทะเบียนใน Google Sheet</p>
+          </div>
+          <span class="tag">ปลอดภัย</span>
+        </div>
+        <div class="grid md:grid-cols-2 gap-4 mt-4">
+          <label class="block">
+            <span class="text-sm">ชื่อผู้ใช้</span>
+            <input id="username" type="text" class="mt-1 w-full px-3 py-2 rounded bg-white/5 border border-white/15 outline-none focus:ring-2 focus:ring-sky-400" placeholder="username" />
+          </label>
+          <label class="block">
+            <span class="text-sm">รหัสผ่าน</span>
+            <input id="password" type="password" class="mt-1 w-full px-3 py-2 rounded bg-white/5 border border-white/15 outline-none focus:ring-2 focus:ring-sky-400" placeholder="••••••••" />
+          </label>
+        </div>
+        <div class="mt-4 flex items-center gap-3">
+          <button id="loginBtn" class="btn-brand px-4 py-2 rounded-md font-medium">ล็อกอิน</button>
+          <span class="text-sm text-white/60">ข้อมูลล็อกอินจาก Sheet ID: <span class="mono">1Z5CFazRpebexEeXj595R_1ZP13gNkSJ17ab-qU7P41k</span></span>
+        </div>
+      </div>
+
+      <!-- Dashboard -->
+      <div id="dash" class="hidden glass shadow-elev rounded-xl p-6">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xl font-semibold">ภาพรวม</h2>
+          <button id="gotoB" class="btn-brand px-4 py-2 rounded-md font-medium">ไปที่ “กำหนดแม่แบบ (Workflow B)”</button>
+        </div>
+        <div class="divider my-4"></div>
+        <div class="grid md:grid-cols-3 gap-4">
+          <div class="rounded-lg bg-black/30 border border-white/10 p-4">
+            <p class="text-sm text-white/70 mb-1">สถานะ</p>
+            <p class="text-lg">พร้อมใช้งาน</p>
+          </div>
+          <div class="rounded-lg bg-black/30 border border-white/10 p-4">
+            <p class="text-sm text-white/70 mb-1">เอกสารชั่วคราว</p>
+            <p class="text-lg" id="statTemp">—</p>
+          </div>
+          <div class="rounded-lg bg-black/30 border border-white/10 p-4">
+            <p class="text-sm text-white/70 mb-1">ผู้ใช้งาน</p>
+            <p class="text-lg" id="statUser">—</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Workflow A -->
+      <div id="workflowA" class="hidden glass shadow-elev rounded-xl p-6">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xl font-semibold">Workflow A: ใช้งานแม่แบบ</h2>
+          <button class="px-3 py-2 rounded border border-white/15 hover:bg-white/10" id="btnListFilesA">เลือกไฟล์ .docx</button>
+        </div>
+        <p class="text-sm text-white/70 mt-2">เลือกไฟล์จาก Root เพื่อเริ่มรวมและดึง placeholders</p>
+        <div id="placeholdersA" class="mt-4 hidden">
+          <h3 class="font-medium mb-2">กรอกข้อมูลตัวแปร</h3>
+          <form id="formA" class="grid md:grid-cols-2 gap-3"></form>
+          <div class="mt-4 flex items-center gap-3">
+            <button id="btnFinalizeA" class="btn-brand px-4 py-2 rounded-md font-medium">สร้างเอกสารขั้นสุดท้าย (PDF)</button>
+            <a id="linkGdocA" class="hidden linkish" target="_blank">เปิด Google Doc</a>
+            <a id="linkPdfA" class="hidden linkish" target="_blank">ดาวน์โหลด PDF</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Workflow B -->
+      <div id="workflowB" class="hidden glass shadow-elev rounded-xl p-6">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xl font-semibold">Workflow B: กำหนดแม่แบบ</h2>
+          <button class="px-3 py-2 rounded border border-white/15 hover:bg-white/10" id="btnListFilesB">เลือกไฟล์จาก “แบบฟอร์มสำนวน”</button>
+        </div>
+        <p class="text-sm text-white/70 mt-2">รวมหลาย .docx → สแกน placeholder → บันทึกเป็นแม่แบบใหม่</p>
+        <div id="placeholdersB" class="mt-4 hidden">
+          <h3 class="font-medium mb-2">กรอกข้อมูลทดสอบ/ตัวอย่าง</h3>
+          <form id="formB" class="grid md:grid-cols-2 gap-3"></form>
+          <div class="mt-4 flex items-center gap-3">
+            <input id="templateName" class="px-3 py-2 rounded bg-white/5 border border-white/15 outline-none" placeholder="ตั้งชื่อแม่แบบ" />
+            <button id="btnSaveTemplate" class="px-4 py-2 rounded-md border border-white/15 hover:bg-white/10">บันทึกเป็นแม่แบบ</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- About / Contract -->
+      <div id="about" class="hidden glass shadow-elev rounded-xl p-6">
+        <h2 class="text-xl font-semibold">คู่มือ & สัญญาเชื่อมต่อ</h2>
+        <div class="divider my-4"></div>
+        <ul class="list-disc list-inside text-sm space-y-1 text-white/80">
+          <li>Frontend: Vanilla JS (single index.html), Tailwind CDN</li>
+          <li>Backend: Google Apps Script Web App + Advanced Drive Service</li>
+          <li>Actions ที่ต้องมีใน GAS: <span class="mono">listFiles</span>, <span class="mono">startMergeAndGetPlaceholders</span>, <span class="mono">finalizeDocument</span>, <span class="mono">saveAsTemplate</span></li>
+          <li>รองรับ action เดิม: <span class="mono">loginUser</span>, <span class="mono">getPlaceholders</span>, <span class="mono">createDocFromTemplate</span> (mapping ใน JS)</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <!-- File Picker Modal -->
+  <div id="fileModal" class="hidden fixed inset-0 z-[60] bg-black/60">
+    <div class="max-w-3xl mx-auto mt-24 glass-strong rounded-xl p-6 shadow-elev">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-lg font-semibold">เลือกไฟล์ .docx</h3>
+        <button id="closeFileModal" class="px-2 py-1 rounded border border-white/15 hover:bg-white/10">ปิด</button>
+      </div>
+      <div id="fileList" class="grid md:grid-cols-2 gap-3"></div>
+      <div class="mt-4 text-right">
+        <button id="confirmFiles" class="btn-brand px-4 py-2 rounded-md font-medium">ยืนยันไฟล์ที่เลือก</button>
+      </div>
+    </div>
   </div>
-</div>
 
-<!-- ========================= APP SCRIPT ========================= -->
-<script>
-/* -------------------- CONFIG -------------------- */
-const GAS_HOST = 'https://script.google.com/macros/s/AKfycbzXJXH3z1Iupz6jeJb5vD4oEzVgXyQbbYnhTW2vhr9s-ILRQfWgWeYFj_ULg5AxIGc4/exec';
-const ROOT_FOLDER_ID = 'BdsRx4wqfMyCL0JEQK-1SbH1GocvtPZg';
-const TEMPLATE_FOLDER_ID = '13JghJv5DuptcNP1Ka65UL47ZqShwLqnY';
-const LOGIN_SHEET_ID = '1Z5CFazRpebexEeXj595R_1ZP13gNkSJ17ab-qU7P41k'; // อ้างจาก URL ที่ให้มา
+  <!-- Toast -->
+  <div id="toast" class="hidden fixed bottom-4 right-4 bg-white text-slate-900 rounded-lg px-4 py-2 shadow-lg"></div>
 
-/* -------------------- STATE -------------------- */
-const STATE = {
-  user: null,
-  tempDocId: null,
-  placeholders: [],
-  selectedDocs: [],
-};
+  <script>
+    // ===== Config =====
+    const GAS_URL = document.getElementById('gasUrl').textContent.trim();
+    const ROOT_FOLDER_ID = document.getElementById('rootFolderId').textContent.trim();
+    const TEMP_FOLDER_ID = document.getElementById('tempFolderId').textContent.trim();
+    const LOGIN_SHEET_ID = '1Z5CFazRpebexEeXj595R_1ZP13gNkSJ17ab-qU7P41k';
 
-/* -------------------- HELPERS -------------------- */
-const qs  = (s, el=document)=>el.querySelector(s);
-const qsa = (s, el=document)=>[...el.querySelectorAll(s)];
-function show(el){ el.classList.remove('hidden'); }
-function hide(el){ el.classList.add('hidden'); }
-function toast(msg){ const t=qs('#toast'); qs('#toast-text').textContent=msg; show(t); setTimeout(()=>hide(t),1800); }
-function block(on=true){ const b=qs('#blocker'); on?show(b):hide(b); }
-function fmtDate(d){ return new Date(d).toLocaleString('th-TH'); }
+    // ===== State =====
+    const state = {
+      loggedIn: false,
+      selectedDocIds: [],
+      placeholders: [],
+      tempDocId: null,
+      whichFlow: null, // 'A' | 'B'
+    };
 
-async function apiFetch(action, payload={}){
-  block(true);
-  try{
-    const res = await fetch(GAS_HOST, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ action, ...payload })
-    });
-    if(!res.ok) throw new Error('HTTP '+res.status);
-    const data = await res.json();
-    return data;
-  }catch(err){
-    console.error(err);
-    toast('เกิดข้อผิดพลาดในการเชื่อมต่อ');
-    throw err;
-  }finally{ block(false); }
-}
-
-/* -------------------- LOGIN -------------------- */
-/* หมายเหตุ: ฝั่ง GAS ควรรองรับ action: 'login' เพื่อตรวจสอบกับชีตที่ระบุ
-   ถ้ายังไม่พร้อม ระบบจะอนุญาตโหมดเดโม (จำลอง) สำหรับทดสอบ UI */
-qs('#login-form').addEventListener('submit', async (e)=>{
-  e.preventDefault();
-  const username = qs('#login-username').value.trim();
-  const password = qs('#login-password').value.trim();
-  if(!username || !password){ toast('กรอกข้อมูลให้ครบ'); return; }
-  try{
-    // พยายามตรวจสอบกับ GAS
-    const resp = await apiFetch('login', { username, password, sheetId: LOGIN_SHEET_ID });
-    if(resp && resp.status==='ok'){
-      STATE.user = { username };
-      localStorage.setItem('user', JSON.stringify(STATE.user));
-      enterApp();
-      return;
-    }else{
-      toast(resp?.message || 'เข้าสู่ระบบไม่สำเร็จ');
+    // ===== Utils =====
+    const $ = (sel) => document.querySelector(sel);
+    const show = (el) => el.classList.remove('hidden');
+    const hide = (el) => el.classList.add('hidden');
+    function toast(msg, ms = 2600) {
+      const t = $('#toast');
+      t.textContent = msg;
+      t.classList.remove('hidden');
+      setTimeout(()=>t.classList.add('hidden'), ms);
     }
-  }catch{
-    // โหมดเดโม (ถ้า backend ยังไม่ทำ)
-    STATE.user = { username };
-    localStorage.setItem('user', JSON.stringify(STATE.user));
-    enterApp();
-  }
-});
+    async function postJSON(url, payload) {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json' },
+        body: JSON.stringify(payload)
+      });
+      return await res.json();
+    }
+    async function getJSON(url) {
+      const res = await fetch(url);
+      return await res.json();
+    }
+    // Regex for 3 placeholder forms
+    const PH_REGEX_COMBINED = /\\{\\{([^{}]+)\\}\\}|<<\\s*([^<>]+?)\\s*>>|<\\s*([^<>]+?)\\s*>/g;
 
-function enterApp(){
-  hide(qs('#view-login'));
-  show(qs('#view-main'));
-  navigate('dashboard');
-  // ค่าเริ่มต้นของโฟลเดอร์
-  qs('#a-folder').value = ROOT_FOLDER_ID; // ให้เลือกตามสะดวก
-  qs('#b-folder').value = 'แบบฟอร์มสำนวน'; // ตามสเปคให้ดึงจากโฟลเดอร์ชื่อ "แบบฟอร์มสำนวน"
-}
+    // ===== Login =====
+    async function login() {
+      const username = $('#username').value.trim();
+      const password = $('#password').value.trim();
+      if (!username || !password) return toast('กรอกชื่อผู้ใช้และรหัสผ่าน');
 
-/* -------------------- NAVIGATION -------------------- */
-function navigate(route){
-  qsa('[id^="page-"]').forEach(hide);
-  qsa('.nav-link').forEach(el=>el.classList.remove('bg-slate-100'));
-  switch(route){
-    case 'workflowA':
-      show(qs('#page-workflowA')); break;
-    case 'workflowB':
-      show(qs('#page-workflowB')); break;
-    default:
-      show(qs('#page-dashboard'));
-  }
-  qsa('.nav-link').find(el=>el.dataset.route===route)?.classList.add('bg-slate-100');
-}
+      // Uses existing backend action: loginUser
+      const result = await postJSON(GAS_URL, { action:'loginUser', username, password });
+      if (result.status === 'success') {
+        state.loggedIn = true;
+        localStorage.setItem('sid', btoa(username + '|' + Date.now()));
+        $('#login-badge').textContent = 'ล็อกอินแล้ว';
+        hide($('#login-card'));
+        show($('#dash'));
+        $('#statUser').textContent = username;
+        toast('เข้าสู่ระบบสำเร็จ');
+      } else {
+        toast(result.message || 'ล็อกอินไม่สำเร็จ');
+      }
+    }
 
-qsa('.nav-link').forEach(el=>el.addEventListener('click', ()=>navigate(el.dataset.route)));
-qs('#btn-open-workflow-b').addEventListener('click', ()=>navigate('workflowB'));
-qs('#btn-logout').addEventListener('click', ()=>{
-  localStorage.removeItem('user'); location.reload();
-});
+    // ===== Routing =====
+    const sections = { dash: '#dash', A: '#workflowA', B: '#workflowB', about:'#about' };
+    function go(route) {
+      Object.values(sections).forEach(sel => hide($(sel)));
+      if (route === 'dashboard') show($('#dash'));
+      if (route === 'workflow-a') show($('#workflowA'));
+      if (route === 'workflow-b') show($('#workflowB'));
+      if (route === 'about') show($('#about'));
+    }
 
-/* -------------------- RENDERERS -------------------- */
-function renderFiles(container, files){
-  if(!files || !files.length){
-    container.innerHTML = `<div class="text-sm text-slate-500">ไม่พบไฟล์ .docx ในโฟลเดอร์นี้</div>`;
-    return;
-  }
-  const rows = files.map(f=>`
-    <tr class="border-b last:border-0">
-      <td class="px-3 py-2"><input type="checkbox" class="file-check" value="${f.id}"></td>
-      <td class="px-3 py-2">${f.name}</td>
-      <td class="px-3 py-2 text-xs text-slate-500">${f.size||'-'}</td>
-      <td class="px-3 py-2 text-xs text-slate-500">${f.modifiedTime?fmtDate(f.modifiedTime):'-'}</td>
-    </tr>
-  `).join('');
-  container.innerHTML = `
-    <div class="overflow-auto border border-slate-200 rounded-lg">
-      <table class="min-w-full text-sm">
-        <thead class="bg-slate-50">
-          <tr>
-            <th class="px-3 py-2 text-left w-10"><input type="checkbox" id="check-all"></th>
-            <th class="px-3 py-2 text-left">ชื่อไฟล์</th>
-            <th class="px-3 py-2 text-left">ขนาด</th>
-            <th class="px-3 py-2 text-left">แก้ไขล่าสุด</th>
-          </tr>
-        </thead>
-        <tbody>${rows}</tbody>
-      </table>
-    </div>`;
-  qs('#check-all', container).addEventListener('change', (e)=>{
-    qsa('.file-check', container).forEach(c=>c.checked=e.target.checked);
-  });
-}
+    // ===== File listing (listFiles) =====
+    async function listFiles(folderNameOrId) {
+      // Required action per spec: listFiles (filters .docx)
+      // Expecting GAS to support POST {action:'listFiles', folderName}
+      // If backend not ready, fallback: try GET to getPlaceholders (not applicable) -> return empty
+      try {
+        const res = await postJSON(GAS_URL, { action:'listFiles', folderName: folderNameOrId });
+        if (res.status === 'success' && Array.isArray(res.files)) return res.files; // [{id,name,mimeType}]
+      } catch(e) { /* noop */ }
+      // Fallback: none available
+      return [];
+    }
 
-function renderPlaceholderForm(containerForm, placeholders){
-  const unique = [...new Set(placeholders||[])];
-  if(!unique.length){
-    containerForm.innerHTML = `<div class="text-sm text-slate-500">ไม่พบตัวแปรในเอกสาร</div>`;
-    return;
-  }
-  containerForm.innerHTML = unique.map(ph=>{
-    const key = ph.trim();
-    const prev = JSON.parse(localStorage.getItem('ph-map')||'{}')[key]||'';
-    return `
-      <div>
-        <label class="text-sm font-medium">${key}</label>
-        <input name="${key}" class="input mt-1" value="${prev}" placeholder="พิมพ์ค่าแทนที่สำหรับ: ${key}" />
-      </div>
-    `;
-  }).join('');
-}
+    // ===== startMergeAndGetPlaceholders =====
+    async function startMergeAndGetPlaceholders(docIds) {
+      // Required action per spec: startMergeAndGetPlaceholders(docIds)
+      // Expecting: { status:'success', placeholders:[], tempDocId:'...' }
+      try {
+        const res = await postJSON(GAS_URL, { action:'startMergeAndGetPlaceholders', docIds });
+        if (res.status === 'success') return res;
+      } catch (e) { /* noop */ }
 
-/* -------------------- WORKFLOW A -------------------- */
-qs('#a-list').addEventListener('click', async ()=>{
-  const folderName = qs('#a-folder').value.trim();
-  if(!folderName){ toast('โปรดระบุโฟลเดอร์'); return; }
-  const data = await apiFetch('listFiles', { folderName });
-  // คาดหวังให้ฝั่ง GAS กรองไฟล์ .docx มาแล้ว
-  STATE.selectedDocs = [];
-  renderFiles(qs('#a-files'), data.files||[]);
-  qs('#a-merge').disabled = false;
-});
+      // Fallback path for existing backend (single template) via doGet?action=getPlaceholders&templateName=...
+      // If user selected exactly 1 file and its name maps in backend TEMPLATE_ID_MAPPING,
+      // we can attempt to call getPlaceholders.
+      if (docIds.length === 1 && typeof docIds[0] === 'string') {
+        try {
+          const nameGuess = docIds[0]; // using name as templateName guess
+          const url = GAS_URL + '?action=getPlaceholders&templateName=' + encodeURIComponent(nameGuess);
+          const rs = await getJSON(url);
+          if (rs.status === 'success') {
+            return { status:'success', placeholders: rs.fields || [], tempDocId: null };
+          }
+        } catch(e){ /* noop */ }
+      }
 
-qs('#a-merge').addEventListener('click', async ()=>{
-  const ids = qsa('#a-files .file-check:checked').map(c=>c.value);
-  if(ids.length===0){ toast('เลือกไฟล์อย่างน้อย 1 รายการ'); return; }
-  const resp = await apiFetch('startMergeAndGetPlaceholders', { docIds: ids });
-  STATE.tempDocId = resp.tempDocId;
-  STATE.placeholders = resp.placeholders || [];
-  show(qs('#a-form-wrap'));
-  renderPlaceholderForm(qs('#a-form'), STATE.placeholders);
-  qs('#a-result').classList.add('hidden');
-  toast(`รวมเอกสารแล้ว (tempDocId: ${STATE.tempDocId})`);
-});
+      return { status:'error', message:'startMergeAndGetPlaceholders not available on backend' };
+    }
 
-qs('#a-finalize').addEventListener('click', async (e)=>{
-  e.preventDefault();
-  const formEl = qs('#a-form');
-  const formData = {};
-  qsa('input', formEl).forEach(i=>formData[i.name]=i.value);
-  // จดจำค่าที่กรอกเพื่อช่วยกรอกครั้งถัดไป
-  localStorage.setItem('ph-map', JSON.stringify({...JSON.parse(localStorage.getItem('ph-map')||'{}'), ...formData}));
-  const resp = await apiFetch('finalizeDocument', { formData, tempDocId: STATE.tempDocId });
-  const result = qs('#a-result');
-  result.innerHTML = `
-    <div class="card p-4">
-      <div class="font-medium mb-2">สำเร็จ</div>
-      <a href="${resp.gdocUrl}" target="_blank" class="text-brand-600 underline">เปิดเอกสาร Google Docs</a><br>
-      <a href="${resp.downloadUrl}" target="_blank" class="text-brand-600 underline">ดาวน์โหลด PDF</a>
-    </div>`;
-  show(result);
-});
+    // ===== finalizeDocument =====
+    async function finalizeDocument(formData, tempDocId) {
+      // Required action: finalizeDocument
+      try {
+        const res = await postJSON(GAS_URL, { action:'finalizeDocument', formData, tempDocId });
+        if (res.status === 'success') return res; // {gdocUrl, downloadUrl}
+      } catch(e){ /* noop */ }
 
-qs('#a-reset').addEventListener('click', ()=>{
-  qs('#a-form').innerHTML=''; hide(qs('#a-form-wrap')); hide(qs('#a-result'));
-  STATE.tempDocId=null; STATE.placeholders=[];
-});
+      // Fallback to existing action createDocFromTemplate (single template mode)
+      if (state.selectedDocIds.length === 1) {
+        try {
+          const templateName = state.selectedDocIds[0];
+          const rs = await postJSON(GAS_URL, { action:'createDocFromTemplate', templateName, data: formData });
+          if (rs.status === 'success') {
+            // Return minimal success
+            return { status:'success', gdocUrl:'https://docs.google.com/document/d/' + rs.docId, downloadUrl:'' };
+          }
+        } catch(e){ /* noop */ }
+      }
+      return { status:'error', message:'finalizeDocument not available on backend' };
+    }
 
-/* -------------------- WORKFLOW B -------------------- */
-qs('#b-list').addEventListener('click', async ()=>{
-  const folderName = qs('#b-folder').value.trim() || 'แบบฟอร์มสำนวน';
-  const data = await apiFetch('listFiles', { folderName });
-  renderFiles(qs('#b-files'), data.files||[]);
-  qs('#b-merge').disabled = false;
-});
+    // ===== saveAsTemplate =====
+    async function saveAsTemplate(tempDocId, templateName, targetFolder) {
+      try {
+        const res = await postJSON(GAS_URL, { action:'saveAsTemplate', tempDocId, templateName, targetFolder });
+        return res;
+      } catch(e){
+        return { status:'error', message:'saveAsTemplate not available on backend' };
+      }
+    }
 
-qs('#b-merge').addEventListener('click', async ()=>{
-  const ids = qsa('#b-files .file-check:checked').map(c=>c.value);
-  if(ids.length===0){ toast('เลือกไฟล์อย่างน้อย 1 รายการ'); return; }
-  const resp = await apiFetch('startMergeAndGetPlaceholders', { docIds: ids });
-  STATE.tempDocId = resp.tempDocId;
-  STATE.placeholders = resp.placeholders || [];
-  show(qs('#b-form-wrap'));
-  renderPlaceholderForm(qs('#b-form'), STATE.placeholders);
-  qs('#b-result').classList.add('hidden');
-  qs('#b-save-template').disabled = false;
-  toast('พร้อมกำหนดแม่แบบ');
-});
+    // ===== UI: File picker modal =====
+    const modal = $('#fileModal'); const fileListEl = $('#fileList');
+    const pickState = { files: [], selected: new Set(), target: 'A' };
 
-/* Save as template (ปุ่มแถบบน) */
-qs('#b-save-template').addEventListener('click', async ()=>{
-  const name = qs('#b-template-name').value.trim() || ('Template '+new Date().toISOString().slice(0,10));
-  const targetFolder = qs('#b-target-folder').value.trim() || ROOT_FOLDER_ID;
-  if(!STATE.tempDocId){ toast('ยังไม่มีเอกสาร Merged'); return; }
-  const resp = await apiFetch('saveAsTemplate', { tempDocId: STATE.tempDocId, templateName: name, targetFolder });
-  toast(resp?.message || 'คัดลอกเป็นแม่แบบแล้ว');
-});
+    function renderFileList(files) {
+      fileListEl.innerHTML = '';
+      files.forEach(f=>{
+        const card = document.createElement('label');
+        card.className = 'flex items-center gap-3 p-3 rounded bg-black/30 border border-white/10 hover:bg-white/10 cursor-pointer';
+        card.innerHTML = \`
+          <input type="checkbox" class="mt-0.5" data-id="\${f.id}" data-name="\${f.name}">
+          <div class="flex-1">
+            <div class="font-medium">\${f.name}</div>
+            <div class="text-xs text-white/60 mono">\${f.id}</div>
+          </div>
+          <span class="tag">.docx</span>
+        \`;
+        fileListEl.appendChild(card);
+      });
+      fileListEl.querySelectorAll('input[type="checkbox"]').forEach(cb=>{
+        cb.addEventListener('change', (e)=>{
+          const id = e.target.dataset.id;
+          const name = e.target.dataset.name;
+          if (e.target.checked) pickState.selected.add(name); else pickState.selected.delete(name);
+        });
+      });
+    }
 
-/* Save as template (การ์ดขวา) */
-qs('#b-save-template-2').addEventListener('click', ()=>qs('#b-save-template').click());
+    async function openPicker(target) {
+      pickState.target = target; // 'A' | 'B'
+      show(modal);
+      toast('กำลังดึงรายการไฟล์ .docx ...');
+      const folderId = target==='A' ? ROOT_FOLDER_ID : 'แบบฟอร์มสำนวน';
+      const files = await listFiles(folderId);
+      renderFileList(files);
+    }
 
-qs('#b-finalize').addEventListener('click', async (e)=>{
-  e.preventDefault();
-  const formEl = qs('#b-form');
-  const formData = {};
-  qsa('input', formEl).forEach(i=>formData[i.name]=i.value);
-  localStorage.setItem('ph-map', JSON.stringify({...JSON.parse(localStorage.getItem('ph-map')||'{}'), ...formData}));
-  const resp = await apiFetch('finalizeDocument', { formData, tempDocId: STATE.tempDocId });
-  const result = qs('#b-result');
-  result.innerHTML = `
-    <div class="card p-4">
-      <div class="font-medium mb-2">สร้างเอกสารตัวอย่างสำเร็จ</div>
-      <a href="${resp.gdocUrl}" target="_blank" class="text-brand-600 underline">เปิดเอกสาร Google Docs</a><br>
-      <a href="${resp.downloadUrl}" target="_blank" class="text-brand-600 underline">ดาวน์โหลด PDF</a>
-    </div>`;
-  show(result);
-});
+    // ===== Build Dynamic Form from placeholders =====
+    function sanitizeKey(raw) {
+      return String(raw||'').trim();
+    }
+    function buildForm(placeholders, formEl) {
+      formEl.innerHTML = '';
+      placeholders.forEach((p)=>{
+        const key = sanitizeKey(p);
+        const id = 'fld_' + key.replace(/\\s+/g,'_');
+        const wrap = document.createElement('label');
+        wrap.className = 'block';
+        wrap.innerHTML = \`
+          <span class="text-sm">\${key}</span>
+          <input id="\${id}" class="mt-1 w-full px-3 py-2 rounded bg-white/5 border border-white/15 outline-none focus:ring-2 focus:ring-sky-400" placeholder="\${key}">
+        \`;
+        formEl.appendChild(wrap);
+      });
+    }
+    function collectForm(formEl) {
+      const data = {};
+      formEl.querySelectorAll('input,textarea,select').forEach(inp=>{
+        const label = inp.previousElementSibling?.textContent?.trim() || inp.name || inp.id;
+        data[label] = inp.value;
+      });
+      return data;
+    }
 
-qs('#b-reset').addEventListener('click', ()=>{
-  qs('#b-form').innerHTML=''; hide(qs('#b-form-wrap')); hide(qs('#b-result'));
-  STATE.tempDocId=null; STATE.placeholders=[];
-});
+    // ===== Events =====
+    $('#loginBtn').addEventListener('click', login);
+    $('#logoutBtn').addEventListener('click', ()=>{
+      localStorage.removeItem('sid'); state.loggedIn=false;
+      $('#login-badge').textContent = 'ยังไม่ล็อกอิน';
+      show($('#login-card'));
+      Object.values(sections).forEach(sel => hide($(sel)));
+      toast('ออกจากระบบแล้ว');
+    });
 
-/* -------------------- SHORTCUTS -------------------- */
-document.addEventListener('keydown', (e)=>{
-  if(e.key==='A' || e.key==='a'){ navigate('workflowA'); }
-  if(e.key==='B' || e.key==='b'){ navigate('workflowB'); }
-});
+    // Top nav
+    $('#nav-workflow-a').addEventListener('click', ()=>go('workflow-a'));
+    $('#nav-workflow-b').addEventListener('click', ()=>go('workflow-b'));
+    $('#nav-about').addEventListener('click', ()=>go('about'));
+    $('#gotoB').addEventListener('click', ()=>go('workflow-b'));
 
-/* -------------------- AUTO LOGIN (remember me) -------------------- */
-(function init(){
-  const u = localStorage.getItem('user');
-  if(u){ STATE.user = JSON.parse(u); enterApp(); }
-})();
-</script>
+    // Sidebar nav
+    document.querySelectorAll('[data-route]').forEach(btn=>{
+      btn.addEventListener('click', ()=> go(btn.dataset.route));
+    });
+
+    // File picker controls
+    $('#btnListFilesA').addEventListener('click', ()=> openPicker('A'));
+    $('#btnListFilesB').addEventListener('click', ()=> openPicker('B'));
+    $('#closeFileModal').addEventListener('click', ()=> hide(modal));
+
+    $('#confirmFiles').addEventListener('click', async ()=>{
+      hide(modal);
+      state.selectedDocIds = Array.from(pickState.selected); // using names for fallbacks
+      if (!state.selectedDocIds.length) return toast('ยังไม่เลือกไฟล์');
+
+      toast('กำลังรวมไฟล์และสแกน placeholders ...');
+      const rs = await startMergeAndGetPlaceholders(state.selectedDocIds);
+      if (rs.status !== 'success') return toast(rs.message || 'เริ่มกระบวนการไม่สำเร็จ');
+
+      state.placeholders = rs.placeholders || [];
+      state.tempDocId = rs.tempDocId || null;
+
+      if (pickState.target === 'A') {
+        show($('#placeholdersA'));
+        buildForm(state.placeholders, $('#formA'));
+        toast('เตรียมฟอร์มสำหรับกรอกข้อมูลแล้ว');
+      } else {
+        show($('#placeholdersB'));
+        buildForm(state.placeholders, $('#formB'));
+        toast('เตรียมฟอร์มแม่แบบแล้ว');
+      }
+    });
+
+    // Finalize A
+    $('#btnFinalizeA').addEventListener('click', async ()=>{
+      const formData = collectForm($('#formA'));
+      const rs = await finalizeDocument(formData, state.tempDocId);
+      if (rs.status === 'success') {
+        if (rs.gdocUrl) { const a = $('#linkGdocA'); a.href = rs.gdocUrl; show(a); }
+        if (rs.downloadUrl) { const b = $('#linkPdfA'); b.href = rs.downloadUrl; show(b); }
+        toast('สร้างเอกสารสำเร็จ');
+      } else {
+        toast(rs.message || 'สร้างเอกสารไม่สำเร็จ');
+      }
+    });
+
+    // Save as Template (B)
+    $('#btnSaveTemplate').addEventListener('click', async ()=>{
+      const name = $('#templateName').value.trim();
+      if (!name) return toast('ตั้งชื่อแม่แบบก่อน');
+      if (!state.tempDocId) return toast('ยังไม่มี tempDocId');
+
+      const rs = await saveAsTemplate(state.tempDocId, name, TEMP_FOLDER_ID);
+      if (rs.status === 'success') {
+        toast('บันทึกแม่แบบสำเร็จ');
+      } else {
+        toast(rs.message || 'บันทึกแม่แบบไม่สำเร็จ');
+      }
+    });
+
+    // Init
+    (function init(){
+      const sid = localStorage.getItem('sid');
+      if (sid) {
+        state.loggedIn = true;
+        $('#login-badge').textContent = 'ล็อกอินแล้ว';
+        hide($('#login-card'));
+        show($('#dash'));
+      }
+    })();
+  </script>
 </body>
 </html>
